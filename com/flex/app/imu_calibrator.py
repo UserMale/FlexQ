@@ -2,7 +2,6 @@
 import subprocess
 class imu_calibrator():
     def __init__(self):
-        # type: () -> object
         pass
     def login(self):
         command_0 = [r"..\tools\bin\win32\imu_calibrator.exe"]

@@ -1,14 +1,49 @@
 #Boa:Frame:Frame1
 
+import logging
+import random
+import thread
+import sys
 import wx
+import wx.richtext
 import wx.lib.intctrl
 import wx.lib.filebrowsebutton
+from com.flex.app.lighthouse_console import lighthouse_console
+from com.flex.app.imu_calibrator import imu_calibrator
+from com.flex.app.vrtrackingcalib import vrtrackingcalib
 
+logger = logging.getLogger()
+print "logger=",logger
+print "__name__",__name__
 gBtn1ConnFlag = False
 gBtn2ConnFlag = False
 gBtn5ConnFlag = False
 
+#print "__name__=",__name__
+
+class WxTextCtrlHandle(logging.Handler):
+
+    def __init__(self,ctrl):
+        logging.Handler.__init__(self)
+        self.ctrl = ctrl
+        print "Init Position ,",self.ctrl
+
+    def emit(self, record):
+        s = self.format(record) + '\n'
+        print "s=", s
+        wx.CallAfter(self.ctrl.WriteText, s)
+
+LEVELS = [
+    logging.DEBUG,
+    logging.INFO,
+    logging.WARNING,
+    logging.ERROR,
+    logging.CRITICAL
+]
+
+
 def create(parent):
+
     return Frame1(parent)
 
 [wxID_FRAME1, wxID_FRAME1BUTTON1, wxID_FRAME1BUTTON2, wxID_FRAME1BUTTON3, 
@@ -18,16 +53,18 @@ def create(parent):
  wxID_FRAME1CHECKBOX5, wxID_FRAME1CHECKBOX6, wxID_FRAME1DIRBROWSEBUTTON1, 
  wxID_FRAME1FILEBROWSEBUTTONWITHHISTORY1, 
  wxID_FRAME1FILEBROWSEBUTTONWITHHISTORY2, wxID_FRAME1INTCTRL1, 
- wxID_FRAME1INTCTRL2, wxID_FRAME1LISTBOX1, wxID_FRAME1NOTEBOOK1, 
- wxID_FRAME1PANEL1, wxID_FRAME1PANEL2, wxID_FRAME1PANEL3, wxID_FRAME1PANEL4, 
- wxID_FRAME1STATICBOX1, wxID_FRAME1STATICBOX2, wxID_FRAME1STATICBOX3, 
- wxID_FRAME1STATICBOX4, wxID_FRAME1STATICBOX5, wxID_FRAME1STATICBOX6, 
- wxID_FRAME1STATICBOX7, wxID_FRAME1STATICBOX9, wxID_FRAME1STATICTEXT1, 
- wxID_FRAME1STATICTEXT2, wxID_FRAME1STATICTEXT3, wxID_FRAME1STATUSBAR1, 
- wxID_FRAME1STATUSBAR2, wxID_FRAME1STATUSBAR3, 
+ wxID_FRAME1INTCTRL2, wxID_FRAME1NOTEBOOK1, wxID_FRAME1PANEL1, 
+ wxID_FRAME1PANEL2, wxID_FRAME1PANEL3, wxID_FRAME1PANEL4, 
+ wxID_FRAME1RICHTEXTCTRL1, wxID_FRAME1STATICBOX1, wxID_FRAME1STATICBOX2, 
+ wxID_FRAME1STATICBOX3, wxID_FRAME1STATICBOX4, wxID_FRAME1STATICBOX5, 
+ wxID_FRAME1STATICBOX6, wxID_FRAME1STATICBOX7, wxID_FRAME1STATICBOX9, 
+ wxID_FRAME1STATICTEXT1, wxID_FRAME1STATICTEXT2, wxID_FRAME1STATICTEXT3, 
+ wxID_FRAME1STATUSBAR1, wxID_FRAME1STATUSBAR2, wxID_FRAME1STATUSBAR3, 
 ] = [wx.NewId() for _init_ctrls in range(40)]
 
 [wxID_FRAME1MENU1ITEMS0] = [wx.NewId() for _init_coll_menu1_Items in range(1)]
+
+[wxID_FRAME1TIMER1] = [wx.NewId() for _init_utils in range(1)]
 
 class Frame1(wx.Frame):
     def _init_coll_FlexQ_Menus(self, parent):
@@ -59,6 +96,9 @@ class Frame1(wx.Frame):
 
         self.menu1 = wx.Menu(title='')
 
+        self.timer1 = wx.Timer(id=wxID_FRAME1TIMER1, owner=self)
+        self.Bind(wx.EVT_TIMER, self.OnTimer1Timer, id=wxID_FRAME1TIMER1)
+
         self._init_coll_FlexQ_Menus(self.FlexQ)
         self._init_coll_menu1_Items(self.menu1)
 
@@ -66,7 +106,7 @@ class Frame1(wx.Frame):
         # generated method, don't edit
         wx.Frame.__init__(self, id=wxID_FRAME1, name='', parent=prnt,
               pos=wx.Point(656, 294), size=wx.Size(981, 568),
-              style=wx.DEFAULT_FRAME_STYLE, title='Frame1')
+              style=wx.DEFAULT_FRAME_STYLE, title='Phantom Test Tool')
         self._init_utils()
         self.SetClientSize(wx.Size(965, 529))
 
@@ -101,28 +141,18 @@ class Frame1(wx.Frame):
 
         self.statusBar1 = wx.StatusBar(id=wxID_FRAME1STATUSBAR1,
               name='statusBar1', parent=self.panel1, style=0)
-        self.statusBar1.SetStatusText(u'Connect Status')
+        self.statusBar1.SetStatusText(u'Current Status:   Disconnect')
         self.statusBar1.SetToolTipString(u'statusBar1')
         self.statusBar1.SetThemeEnabled(True)
         self.statusBar1.SetAutoLayout(True)
 
-        self.listBox1 = wx.ListBox(choices=[], id=wxID_FRAME1LISTBOX1,
-              name='listBox1', parent=self.panel1, pos=wx.Point(544, 64),
-              size=wx.Size(408, 416), style=0)
-        self.listBox1.SetThemeEnabled(False)
-        self.listBox1.SetAutoLayout(True)
-        self.listBox1.SetLabel(u'Console Output')
-        self.listBox1.SetStringSelection(u'1')
-        self.listBox1.Bind(wx.EVT_LISTBOX, self.OnListBox1Listbox,
-              id=wxID_FRAME1LISTBOX1)
-
         self.statusBar2 = wx.StatusBar(id=wxID_FRAME1STATUSBAR2,
               name='statusBar2', parent=self.panel2, style=0)
-        self.statusBar2.SetStatusText(u'Connect Status')
+        self.statusBar2.SetStatusText(u'Current Status:   Disconnect')
 
         self.statusBar3 = wx.StatusBar(id=wxID_FRAME1STATUSBAR3,
               name='statusBar3', parent=self.panel3, style=0)
-        self.statusBar3.SetStatusText(u'Connect Status')
+        self.statusBar3.SetStatusText(u'Current Status:   Disconnect')
 
         self.button2 = wx.Button(id=wxID_FRAME1BUTTON2, label=u'Connect',
               name='button2', parent=self.panel2, pos=wx.Point(8, 96),
@@ -292,23 +322,68 @@ class Frame1(wx.Frame):
               label=u'Console Output', name='staticText3', parent=self.panel1,
               pos=wx.Point(544, 48), size=wx.Size(86, 14), style=0)
 
+        self.richTextCtrl1 = wx.richtext.RichTextCtrl(id=wxID_FRAME1RICHTEXTCTRL1,
+              parent=self.panel1, pos=wx.Point(552, 72), size=wx.Size(392, 400),
+              style=wx.richtext.RE_MULTILINE|wx.richtext.RE_READONLY|wx.HSCROLL|wx.VSCROLL|wx.EXPAND|wx.TE_RICH2,
+              value=u'')
+        self.richTextCtrl1.SetLabel(u'richText')
+
         self._init_coll_notebook1_Pages(self.notebook1)
 
     def __init__(self, parent):
         self._init_ctrls(parent)
+        handler = WxTextCtrlHandle(self.richTextCtrl1)
+        print("handler=",handler)
+        logger.addHandler(handler)
+        strFormat = "%(asctime)s %(levelname)s %(message)s"
+        handler.setFormatter(logging.Formatter(strFormat))
+        logger.setLevel(logging.NOTSET)
+        #self.lighthouse_console = lighthouse_console()
+        #self.richTextCtrl1.MoveToLineEnd()
+        self.handler_lighthouseconsole = None
+        self.handler_imucalibrator = None
+        self.handler_vrtrackingcalib = None
+        logging.log(logging.INFO, " Initial Setting Finish")
+
+    def Onstart(self):
+        self.timer1.Start(1000)
+
+    def OnStop(self):
+        self.timer1.Stop()
+
 
     def OnBtn1Conn(self, event):
+
         global gBtn1ConnFlag
         gBtn1ConnFlag = ~gBtn1ConnFlag
-        if gBtn1ConnFlag :
-            self.button1.SetLabel(u'Disconnect')
-            self.button6.Enable(True)
-            self.button7.Enable(True)
+
+        if gBtn1ConnFlag:
+            logging.log(logging.INFO," Click Connect")
+            #self.lighthouse_console.login()
+            self.handler_lighthouseconsole = lighthouse_console()
+            boolResult = self.handler_lighthouseconsole.login()
+            if boolResult:
+                self.statusBar1.SetStatusText(u'Current Status:   Connected')
+                self.button1.SetLabel(u'Disconnect')
+                self.button6.Enable(True)
+                self.button7.Enable(True)
+            else:
+                gBtn1ConnFlag = ~gBtn1ConnFlag
+            #nn = random.choice(LEVELS)
+            #print "nn=",nn
+            self.Onstart()
+
         else:
+            self.statusBar1.SetStatusText(u'Current Status:   Disconnect')
             self.button1.SetLabel(u'Connect')
             self.button6.Enable(False)
             self.button7.Enable(False)
-
+            #self.richTextCtrl1.WriteText("hello world")
+            nn = random.choice(LEVELS)
+            print "nn=", nn
+            self.OnStop()
+            self.handler_lighthouseconsole.logout()
+            logging.log(logging.INFO, " Click Disconnect")
         event.Skip()
 
     def OnListBox1Listbox(self, event):
@@ -317,7 +392,7 @@ class Frame1(wx.Frame):
     def OnBtn2Conn(self, event):
         global gBtn2ConnFlag
         gBtn2ConnFlag = ~gBtn2ConnFlag
-        if gBtn2ConnFlag :
+        if gBtn2ConnFlag:
             self.button3.Enable(True)
         else:
             self.button3.Enable(False)
@@ -333,17 +408,24 @@ class Frame1(wx.Frame):
     def OnBtn5Conn(self, event):
         global gBtn5ConnFlag
         gBtn5ConnFlag = ~gBtn5ConnFlag
-        if gBtn5ConnFlag :
+        if gBtn5ConnFlag:
             self.button8.Enable(True)
         else:
             self.button8.Enable(False)
         event.Skip()
 
     def OnBtn6Download(self, event):
+        logging.log(logging.INFO, " Click Download")
+        self.lighthouse_console.login()
         event.Skip()
 
     def OnBtn7Upload(self, event):
+        logging.log(logging.INFO, " Click Upload")
         event.Skip()
 
     def OnBtn8Start(self, event):
+        event.Skip()
+
+    def OnTimer1Timer(self, event):
+        logging.log(logging.INFO, " OnTimer Truggle")
         event.Skip()
