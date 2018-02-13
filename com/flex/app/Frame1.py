@@ -55,12 +55,13 @@ def create(parent):
  wxID_FRAME1FILEBROWSEBUTTONWITHHISTORY2, wxID_FRAME1INTCTRL1, 
  wxID_FRAME1INTCTRL2, wxID_FRAME1NOTEBOOK1, wxID_FRAME1PANEL1, 
  wxID_FRAME1PANEL2, wxID_FRAME1PANEL3, wxID_FRAME1PANEL4, 
- wxID_FRAME1RICHTEXTCTRL1, wxID_FRAME1STATICBOX1, wxID_FRAME1STATICBOX2, 
- wxID_FRAME1STATICBOX3, wxID_FRAME1STATICBOX4, wxID_FRAME1STATICBOX5, 
- wxID_FRAME1STATICBOX6, wxID_FRAME1STATICBOX7, wxID_FRAME1STATICBOX9, 
- wxID_FRAME1STATICTEXT1, wxID_FRAME1STATICTEXT2, wxID_FRAME1STATICTEXT3, 
- wxID_FRAME1STATUSBAR1, wxID_FRAME1STATUSBAR2, wxID_FRAME1STATUSBAR3, 
-] = [wx.NewId() for _init_ctrls in range(40)]
+ wxID_FRAME1RICHTEXTCTRL1, wxID_FRAME1RICHTEXTCTRL2, wxID_FRAME1STATICBOX1, 
+ wxID_FRAME1STATICBOX2, wxID_FRAME1STATICBOX3, wxID_FRAME1STATICBOX4, 
+ wxID_FRAME1STATICBOX5, wxID_FRAME1STATICBOX6, wxID_FRAME1STATICBOX7, 
+ wxID_FRAME1STATICBOX9, wxID_FRAME1STATICTEXT1, wxID_FRAME1STATICTEXT2, 
+ wxID_FRAME1STATICTEXT3, wxID_FRAME1STATICTEXT4, wxID_FRAME1STATUSBAR1, 
+ wxID_FRAME1STATUSBAR2, wxID_FRAME1STATUSBAR3, 
+] = [wx.NewId() for _init_ctrls in range(42)]
 
 [wxID_FRAME1MENU1ITEMS0] = [wx.NewId() for _init_coll_menu1_Items in range(1)]
 
@@ -81,9 +82,9 @@ class Frame1(wx.Frame):
     def _init_coll_notebook1_Pages(self, parent):
         # generated method, don't edit
 
-        parent.AddPage(imageId=-1, page=self.panel1, select=True,
+        parent.AddPage(imageId=-1, page=self.panel1, select=False,
               text=u'lighthouse_console')
-        parent.AddPage(imageId=-1, page=self.panel2, select=False,
+        parent.AddPage(imageId=-1, page=self.panel2, select=True,
               text=u'imu_calibrator')
         parent.AddPage(imageId=-1, page=self.panel3, select=False,
               text=u'vrtrackingcalib')
@@ -328,11 +329,20 @@ class Frame1(wx.Frame):
               value=u'')
         self.richTextCtrl1.SetLabel(u'richText')
 
+        self.richTextCtrl2 = wx.richtext.RichTextCtrl(id=wxID_FRAME1RICHTEXTCTRL2,
+              parent=self.panel2, pos=wx.Point(608, 72), size=wx.Size(344, 320),
+              style=wx.richtext.RE_MULTILINE|wx.richtext.RE_READONLY|wx.HSCROLL|wx.VSCROLL|wx.EXPAND|wx.TE_RICH2,
+              value=u'')
+
+        self.staticText4 = wx.StaticText(id=wxID_FRAME1STATICTEXT4,
+              label=u'Console Output', name='staticText4', parent=self.panel2,
+              pos=wx.Point(608, 56), size=wx.Size(86, 14), style=0)
+
         self._init_coll_notebook1_Pages(self.notebook1)
 
     def __init__(self, parent):
         self._init_ctrls(parent)
-        handler = WxTextCtrlHandle(self.richTextCtrl1)
+        handler = WxTextCtrlHandle(self.richTextCtrl2)
         print("handler=",handler)
         logger.addHandler(handler)
         strFormat = "%(asctime)s %(levelname)s %(message)s"
@@ -340,6 +350,8 @@ class Frame1(wx.Frame):
         logger.setLevel(logging.NOTSET)
         #self.lighthouse_console = lighthouse_console()
         #self.richTextCtrl1.MoveToLineEnd()
+
+
         self.handler_lighthouseconsole = None
         self.handler_imucalibrator = None
         self.handler_vrtrackingcalib = None
@@ -416,7 +428,8 @@ class Frame1(wx.Frame):
 
     def OnBtn6Download(self, event):
         logging.log(logging.INFO, " Click Download")
-        self.lighthouse_console.login()
+        dirfilename = self.dirBrowseButton1.GetValue()
+        self.handler_lighthouseconsole.download(dirfilename)
         event.Skip()
 
     def OnBtn7Upload(self, event):

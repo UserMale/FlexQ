@@ -2,14 +2,37 @@
 import subprocess
 class imu_calibrator():
     def __init__(self):
-        pass
+        self.consoleHandler = None
+        self.serialNum = None
+        self.connState = False
+
     def login(self):
         command_0 = [r"..\tools\bin\win32\imu_calibrator.exe"]
-        result = subprocess.Popen(command_0, shell = False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=None)
-        print result.stdout.readlines()
+        self.consoleHandler = ps.PopenSpawn(r"..\tools\bin\win32\lighthouse_console.exe")
+        index = self.consoleHandler.expect(["Lighthouse VrController HID opened", \
+                                            "Error connecting or Lighthouse IMU"])
+        if index == 0:
+            strResult = self.consoleHandler.before
+            serial_pattern = "lighthouse_console: Connected to receiver\s+(\w+-.*)"
+            strSerial = re.search(serial_pattern, strResult)
+            print "strSerial", strSerial
+            self.serialNum = strSerial.group(1)
+            print "\n%s\n" % self.serialNum
+            logging.log(logging.INFO, strResult)
+            return True
+        else:
+            return False
 
     def logout(self):
-        pass
+        if self.consoleHandler != None:
+            print self.consoleHandler
+            self.consoleHandler.sendline("q")
+            # pro1.expect("demotestconfig")
+            print self.consoleHandler.before
+
+            self.consoleHandler.closed
+        return True
+
     def getCurAxesResult(self):
         pass
     def getNextAxesResult(self):
