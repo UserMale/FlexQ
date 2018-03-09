@@ -1,0 +1,15 @@
+[OPTIONS]
+Default topic=index.html
+Title=UserGuide
+Compiled file=helpbook.chm
+Index file=helpbook.hhk
+Contents file=helpbook.hhc
+Default Window=wxHelp
+Full-text search=Yes
+Compatibility=1.1
+
+[WINDOWS]
+wxHelp=,"helpbook.hhc","helpbook.hhk","index.html",,,,,,0x2420,,0x380e,,,,,0,,,
+
+[FILES]
+helpbook1.hhp
